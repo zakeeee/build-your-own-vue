@@ -1,0 +1,17 @@
+{
+  "name": "build-your-own-vue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "pnpm exec vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^2.7.1",
+    "vitest": "^0.18.0"
+  }
+}
