@@ -1,3 +1,5 @@
+import { ITERATE_KEY } from './reactive'
+
 interface EffectOptions<T> {
   lazy?: boolean
   scheduler?: (fn: EffectFunc<T>) => void
@@ -8,6 +10,45 @@ interface EffectFunc<T = any> {
   deps: Set<EffectFunc>[]
   options: EffectOptions<T>
 }
+
+export enum TriggerType {
+  SET = 'SET',
+  ADD = 'ADD',
+  DELETE = 'DELETE',
+}
+
+const _arrayInstrumentations: any = {}
+;['includes', 'indexOf', 'lastIndexOf'].forEach((method) => {
+  // this是代理对象
+
+  // @ts-ignore
+  const originMethod = Array.prototype[method]
+  _arrayInstrumentations[method] = function (...args: unknown[]) {
+    let res = originMethod.apply(this, args)
+
+    if (res === false) {
+      res = originMethod.apply(this.raw, args)
+    }
+
+    return res
+  }
+})
+
+let shouldTrack = true
+;['push', 'pop', 'shift', 'unshift', 'splice'].forEach((method) => {
+  // this是代理对象
+
+  // @ts-ignore
+  const originMethod = Array.prototype[method]
+  _arrayInstrumentations[method] = function (...args: unknown[]) {
+    shouldTrack = false
+    let res = originMethod.apply(this, args)
+    shouldTrack = true
+    return res
+  }
+})
+
+export const arrayInstrumentations = _arrayInstrumentations
 
 let activeEffect: EffectFunc | undefined = undefined // 当前正在执行的副作用函数
 const effectStack: EffectFunc[] = [] // 副作用函数栈，用于处理副作用函数嵌套的情况
@@ -35,7 +76,7 @@ export function effect<T>(fn: () => T, options: EffectOptions<T> = {}) {
 }
 
 export function track<T extends object>(target: T, key: string | number | symbol) {
-  if (!activeEffect) {
+  if (!activeEffect || !shouldTrack) {
     return
   }
 
@@ -55,18 +96,59 @@ export function track<T extends object>(target: T, key: string | number | symbol
   activeEffect.deps.push(deps)
 }
 
-export function trigger<T extends object>(target: T, key: string | number | symbol) {
+export function trigger<T extends object>(
+  target: T,
+  key: string | number | symbol,
+  type?: TriggerType,
+  newVal?: unknown
+) {
   const depsMap = bucket.get(target)
   if (!depsMap) {
     return
   }
-  const effects = depsMap.get(key)
+
   const effectsToRun = new Set<EffectFunc<T>>()
+
+  const effects = depsMap.get(key)
   if (effects) {
     effects.forEach((effectFn) => {
       // 如果effectFn是当前正在执行的副作用函数，就不要再触发执行了，不然会导致无限递归
       if (effectFn !== activeEffect) {
         effectsToRun.add(effectFn)
+      }
+    })
+  }
+
+  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+    const effects = depsMap.get(ITERATE_KEY)
+    if (effects) {
+      effects.forEach((effectFn) => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn)
+        }
+      })
+    }
+  }
+
+  if (type === TriggerType.ADD && Array.isArray(target)) {
+    const effects = depsMap.get('length')
+    if (effects) {
+      effects.forEach((effectFn) => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn)
+        }
+      })
+    }
+  }
+
+  if (Array.isArray(target) && key === 'length') {
+    depsMap.forEach((effects, key1) => {
+      if (Number(key1) >= (newVal as number)) {
+        effects.forEach((effectFn) => {
+          if (effectFn !== activeEffect) {
+            effectsToRun.add(effectFn)
+          }
+        })
       }
     })
   }

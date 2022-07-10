@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { toProxy } from './proxy'
+import { reactive } from './reactive'
 import { watch } from './watch'
 
 describe('watch', () => {
   test('依赖变化时watch应该执行', () => {
-    const obj = toProxy({ foo: 1, bar: 2 })
+    const obj = reactive({ foo: 1, bar: 2 })
 
     let a = 0
     watch(obj, () => {
@@ -15,7 +15,7 @@ describe('watch', () => {
   })
 
   test('watch立即执行', () => {
-    const obj = toProxy({ foo: 1, bar: 2 })
+    const obj = reactive({ foo: 1, bar: 2 })
 
     let a = 0
     watch(
@@ -31,7 +31,7 @@ describe('watch', () => {
   })
 
   test('watch回调新旧值', () => {
-    const obj = toProxy({ foo: 1, bar: 2 })
+    const obj = reactive({ foo: 1, bar: 2 })
 
     let oldVal
     let newVal
@@ -49,7 +49,7 @@ describe('watch', () => {
   })
 
   test('watch过期effect处理', async () => {
-    const obj = toProxy({ foo: 1 })
+    const obj = reactive({ foo: 1 })
 
     let i = 0
     let timeout = 128

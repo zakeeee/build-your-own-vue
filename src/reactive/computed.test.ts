@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import { computed } from './computed'
 import { effect } from './effect'
-import { toProxy } from './proxy'
+import { reactive } from './reactive'
 
 describe('computed', () => {
   test('computed', () => {
-    const obj = toProxy({ foo: 1, bar: 2 })
+    const obj = reactive({ foo: 1, bar: 2 })
 
     const a = computed(() => obj.foo + obj.bar)
     expect(a.value).toBe(3)
