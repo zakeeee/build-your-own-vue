@@ -52,7 +52,7 @@ export const arrayInstrumentations = _arrayInstrumentations
 
 let activeEffect: EffectFunc | undefined = undefined // 当前正在执行的副作用函数
 const effectStack: EffectFunc[] = [] // 副作用函数栈，用于处理副作用函数嵌套的情况
-const bucket = new WeakMap<object, Map<string | number | symbol, Set<EffectFunc>>>()
+const bucket = new WeakMap<object, Map<string | symbol, Set<EffectFunc>>>()
 
 export function effect<T>(fn: () => T, options: EffectOptions<T> = {}) {
   const effectFn: EffectFunc<T> = () => {
@@ -75,7 +75,7 @@ export function effect<T>(fn: () => T, options: EffectOptions<T> = {}) {
   return effectFn
 }
 
-export function track<T extends object>(target: T, key: string | number | symbol) {
+export function track<T extends object>(target: T, key: string | symbol) {
   if (!activeEffect || !shouldTrack) {
     return
   }
@@ -96,12 +96,7 @@ export function track<T extends object>(target: T, key: string | number | symbol
   activeEffect.deps.push(deps)
 }
 
-export function trigger<T extends object>(
-  target: T,
-  key: string | number | symbol,
-  type?: TriggerType,
-  newVal?: unknown
-) {
+export function trigger<T extends object>(target: T, key: string | symbol, type?: TriggerType, newVal?: unknown) {
   const depsMap = bucket.get(target)
   if (!depsMap) {
     return
