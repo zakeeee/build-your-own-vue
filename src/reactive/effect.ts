@@ -1,4 +1,4 @@
-import { ITERATE_KEY } from './reactive'
+import { ITERATE_KEY, RAW } from './reactive'
 
 interface EffectOptions<T> {
   lazy?: boolean
@@ -27,7 +27,7 @@ const _arrayInstrumentations: any = {}
     let res = originMethod.apply(this, args)
 
     if (res === false) {
-      res = originMethod.apply(this.raw, args)
+      res = originMethod.apply(this[RAW], args)
     }
 
     return res

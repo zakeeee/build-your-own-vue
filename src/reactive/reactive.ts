@@ -2,11 +2,12 @@ import { DeepReadonly } from '@/utils/types'
 import { arrayInstrumentations, track, trigger, TriggerType } from './effect'
 
 export const ITERATE_KEY = Symbol()
+export const RAW = Symbol('raw')
 
 function createReactive<T extends object>(obj: T, isShallow = false, isReadonly = false): T {
   return new Proxy<T>(obj, {
     get(target, p, receiver) {
-      if (p === 'raw') {
+      if (p === RAW) {
         return target
       }
 
@@ -48,7 +49,7 @@ function createReactive<T extends object>(obj: T, isShallow = false, isReadonly 
 
       const res = Reflect.set(target, p, newVal, receiver)
 
-      if (target === receiver.raw) {
+      if (target === receiver[RAW]) {
         // receiver是target的代理对象
 
         if (
