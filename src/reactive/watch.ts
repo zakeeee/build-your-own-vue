@@ -1,66 +1,70 @@
-import { effect } from './effect'
+import { effect } from './effect';
 
 interface WatchOptions {
-  immediate?: boolean
-  flush?: 'sync' | 'pre' | 'post'
+  immediate?: boolean;
+  flush?: 'sync' | 'pre' | 'post';
 }
 
-type WatchCallback<T> = (newValue: T, oldValue: T | undefined, onInvalidate: (fn: () => void) => void) => void
+type WatchCallback<T> = (
+  newValue: T,
+  oldValue: T | undefined,
+  onInvalidate: (fn: () => void) => void
+) => void;
 
 export function watch<T>(source: T | (() => T), cb: WatchCallback<T>, options: WatchOptions = {}) {
-  let getter: () => T
+  let getter: () => T;
   if (typeof source === 'function') {
     // @ts-ignore
-    getter = source
+    getter = source;
   } else {
-    getter = () => traverse(source)
+    getter = () => traverse(source);
   }
 
-  let cleanup: (() => void) | undefined
+  let cleanup: (() => void) | undefined;
   function onInvalidate(fn: () => void) {
-    cleanup = fn
+    cleanup = fn;
   }
 
-  let oldValue: T | undefined
-  let newValue: T
+  let oldValue: T | undefined;
+  let newValue: T;
 
   const job = () => {
-    newValue = effectFn()
+    newValue = effectFn();
     if (cleanup) {
-      cleanup()
+      cleanup();
     }
-    cb(newValue, oldValue, onInvalidate)
-    oldValue = newValue
-  }
+    cb(newValue, oldValue, onInvalidate);
+    oldValue = newValue;
+  };
 
   const effectFn = effect(() => getter(), {
     lazy: true,
     scheduler: () => {
       if (options.flush === 'post') {
-        Promise.resolve().then(job)
+        Promise.resolve().then(job);
       } else {
-        job()
+        job();
       }
     },
-  })
+  });
 
   if (options.immediate) {
-    job()
+    job();
   } else {
-    oldValue = effectFn()
+    oldValue = effectFn();
   }
 }
 
 function traverse(value: any, seen = new Set()) {
   // 暂时只考虑object
   if (typeof value !== 'object' || value === null || seen.has(value)) {
-    return
+    return;
   }
 
-  seen.add(value)
+  seen.add(value);
   for (const k in value) {
-    traverse(value[k], seen)
+    traverse(value[k], seen);
   }
 
-  return value
+  return value;
 }

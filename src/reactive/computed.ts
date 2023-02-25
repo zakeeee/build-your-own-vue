@@ -1,29 +1,29 @@
-import { effect, track, trigger } from './effect'
+import { effect, track, trigger } from './effect';
 
 export function computed<T>(getter: () => T) {
-  let cachedValue: T
-  let dirty = true
+  let cachedValue: T;
+  let dirty = true;
 
   const effectFn = effect(getter, {
     lazy: true,
     scheduler: () => {
       if (!dirty) {
-        dirty = true
-        trigger(obj, 'value')
+        dirty = true;
+        trigger(obj, 'value');
       }
     },
-  })
+  });
 
   const obj = {
     get value() {
       if (dirty) {
-        cachedValue = effectFn()
-        dirty = false
+        cachedValue = effectFn();
+        dirty = false;
       }
-      track(obj, 'value')
-      return cachedValue
+      track(obj, 'value');
+      return cachedValue;
     },
-  }
+  };
 
-  return obj
+  return obj;
 }
